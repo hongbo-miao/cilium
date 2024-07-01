@@ -1249,6 +1249,9 @@ const (
 
 	// BPFEventsTraceEnabled defines the TraceNotification setting for any endpoint
 	BPFEventsTraceEnabled = "bpf-events-trace-enabled"
+
+	// EnableServiceProtocolDifferentiation enables support for service protocol differentiation (TCP, UDP, SCTP)
+	EnableServiceProtocolDifferentiation = "enable-service-protocol-differentiation"
 )
 
 // Default string arguments
@@ -2469,6 +2472,9 @@ type DaemonConfig struct {
 	// EnableSocketLBPodConnectionTermination enables the termination of connections from pods
 	// to deleted service backends when socket-LB is enabled
 	EnableSocketLBPodConnectionTermination bool
+
+	// Enable support for service protocol differentiation (TCP, UDP, SCTP)
+	EnableServiceProtocolDifferentiation bool
 }
 
 var (
@@ -3579,6 +3585,8 @@ func (c *DaemonConfig) Populate(vp *viper.Viper) {
 	if c.KVStore != "" {
 		c.IdentityRestoreGracePeriod = defaults.IdentityRestoreGracePeriodKvstore
 	}
+
+	c.EnableServiceProtocolDifferentiation = vp.GetBool(EnableServiceProtocolDifferentiation)
 }
 
 func (c *DaemonConfig) populateLoadBalancerSettings(vp *viper.Viper) {
