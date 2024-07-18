@@ -3,6 +3,9 @@ name: Scale Test Egress Gateway
 on:
   schedule:
     - cron: '27 0 * * 1-5'
+  push:
+    branches:
+      - pr/learnitall/init-egw-scale-test
 
 # For testing uncomment following lines:
 #  push:
@@ -71,6 +74,8 @@ jobs:
           else
             SHA="${{ github.sha }}"
           fi
+
+          SHA="de06bcfb3cf8ff165421729d2bf579c92fef7631"
 
           CILIUM_INSTALL_DEFAULTS="--chart-directory=install/kubernetes/cilium \
             --set pprof.enabled=true \
