@@ -21,6 +21,7 @@ var _ translation.Translator = (*gatewayAPITranslator)(nil)
 const (
 	ciliumGatewayPrefix = "cilium-gateway-"
 	owningGatewayLabel  = "io.cilium.gateway/owning-gateway"
+	gatewayNameLabel    = "gateway.networking.k8s.io/gateway-name"
 )
 
 type gatewayAPITranslator struct {
@@ -110,7 +111,15 @@ func (t *gatewayAPITranslator) Translate(m *model.Model) (*ciliumv2.CiliumEnvoyC
 		lbSvc.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicy("")
 	}
 
-	return cec, lbSvc, getEndpoints(*source), err
+	shortedName := model.Shorten(source.Name)
+	cec.Labels = mergeMap(cec.Labels, mergeMap(allLabels, map[string]string{
+		gatewayNameLabel: shortedName,
+	}))
+	if len(allAnnotations) > 0 {
+		cec.Annotations = mergeMap(cec.Annotations, allAnnotations)
+	}
+
+	return cec, lbSvc, getEndpoints(*source, allLabels, allAnnotations), err
 }
 
 func getService(resource *model.FullyQualifiedResource, allPorts []uint32, labels, annotations map[string]string, externalTrafficPolicy string) *corev1.Service {
@@ -128,11 +137,16 @@ func getService(resource *model.FullyQualifiedResource, allPorts []uint32, label
 		})
 	}
 
+	shortedName := model.Shorten(resource.Name)
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        model.Shorten(ciliumGatewayPrefix + resource.Name),
-			Namespace:   resource.Namespace,
-			Labels:      mergeMap(map[string]string{owningGatewayLabel: model.Shorten(resource.Name)}, labels),
+			Name:      model.Shorten(ciliumGatewayPrefix + resource.Name),
+			Namespace: resource.Namespace,
+			Labels: mergeMap(map[string]string{
+				owningGatewayLabel: shortedName,
+				gatewayNameLabel:   shortedName,
+			}, labels),
 			Annotations: annotations,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -152,12 +166,18 @@ func getService(resource *model.FullyQualifiedResource, allPorts []uint32, label
 	}
 }
 
-func getEndpoints(resource model.FullyQualifiedResource) *corev1.Endpoints {
+func getEndpoints(resource model.FullyQualifiedResource, labels, annotations map[string]string) *corev1.Endpoints {
+	shortedName := model.Shorten(resource.Name)
+
 	return &corev1.Endpoints{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      model.Shorten(ciliumGatewayPrefix + resource.Name),
 			Namespace: resource.Namespace,
-			Labels:    map[string]string{owningGatewayLabel: model.Shorten(resource.Name)},
+			Labels: mergeMap(map[string]string{
+				owningGatewayLabel: shortedName,
+				gatewayNameLabel:   shortedName,
+			}, labels),
+			Annotations: annotations,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: gatewayv1beta1.GroupVersion.String(),
