@@ -265,6 +265,7 @@ jobs:
               --exempt-features "${{ steps.vars.outputs.exempt-features }}" \
               --allow-crds-mismatch \
               --conformance-profiles GATEWAY-HTTP,GATEWAY-TLS,GATEWAY-GRPC,MESH-HTTP,MESH-GRPC \
+              --supported-features GatewayHTTPListenerIsolation,GatewayPort8080 \
               --organization cilium \
               --project cilium \
               --url github.com/cilium/cilium \
